@@ -1,0 +1,920 @@
+---
+title: "Advanced PLS-SEM Analysis"
+author: "Asif Rahman"
+---
+
+```{r}
+library(seminr)
+
+```
+
+```{r}
+# Load the influencer data
+
+
+library(readr)
+
+influencer_data <- read_csv("Influencer_data.csv")
+
+View(influencer_data)
+
+```
+
+```{r}
+
+# Show the first several rows of the influencer data
+
+head(influencer_data)
+
+```
+#------------------------------------------------------------------------------
+```{r}
+
+# Summary of the influencer data
+
+summary(influencer_data)
+
+```
+
+
+```{r}
+# * REFLECTIVE MEASUREMENT MODEL *
+
+```
+
+```{r}
+
+# Create measurement model
+
+simple_mm <- constructs(
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4))
+  )
+
+```
+
+```{r}
+
+plot(simple_mm)
+
+```
+
+```{r}
+# Create structural model
+
+simple_sm <- relationships(
+  paths(from = c("PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"))
+
+```
+
+```{r}
+
+plot(simple_sm, theme= seminr_theme_old())
+
+```
+
+```{r}
+# Estimate the model
+
+influencer_simple_model <- estimate_pls(data = influencer_data,
+                                      measurement_model = simple_mm,
+                                      structural_model = simple_sm,
+                                      inner_weights = path_weighting,
+                                      missing = mean_replacement,
+                                      missing_value = "-99")
+```
+
+```{r}
+# Summarize the model results
+
+summary_simple_influencer <- summary(influencer_simple_model)
+
+summary_simple_influencer
+```
+
+```{r}
+
+# Inspect the model’s path coefficients and the R^2 values
+
+summary_simple_influencer$paths
+
+```
+
+```{r}
+# Inspect the composite reliability
+
+summary_simple_influencer$reliability
+
+```
+# All alpha, rhoC and rhoA exceeded 0.7 and AVE exceeded 0.5.
+# All rhoA value exceeded the recommended value of 0.8 to 0.9.
+
+```{r}
+# Plot the model
+
+plot(influencer_simple_model,title = "Asif Rahman - Mediation Analysis                                ")
+
+```
+```{r}
+# Inspect the indicator lodgings:
+
+summary_simple_influencer$loadings
+
+```
+
+```{r}
+# Inspect the indicator reliability
+
+summary_simple_influencer$loadings^2
+
+```
+
+```{r}
+
+# Table of the FL criteria
+
+summary_simple_influencer$validity$fl_criteria
+
+```
+```{r}
+
+# HTMT criterion
+
+summary_simple_influencer$validity$htmt
+
+```
+# * All HTMT values are < 0.9 or 0.85 *
+
+
+# **Bootstrap The Model**
+
+```{r}
+# Bootstrap the model
+
+boot_simple_influencer <- bootstrap_model(seminr_model = influencer_simple_model,
+                                        nboot = 1000,
+                                        cores = NULL,
+                                        seed = 123)
+```
+
+```{r}
+# Store the summary of the bootstrapped model
+
+sum_boot_simple_influencer <- summary(boot_simple_influencer)
+
+sum_boot_simple_influencer
+
+```
+
+```{r}
+#Extract The bootstrapped HTMT
+
+sum_boot_simple_influencer$bootstrapped_HTMT
+
+```
+# All HTMT values are < 0.9 or 0.85. 
+
+# And all CI are in positive side, that means they all are significant.
+
+
+# ** Formative Measurement Model **
+
+
+```{r}
+
+# Create measurement model
+
+influencer_mm <- constructs(
+  composite("SIC", multi_items("sic_", 1:7), weights = mode_B),
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4))
+  )
+
+```
+
+```{r}
+plot(influencer_mm)
+
+```
+
+```{r}
+# Create structural model
+
+influencer_sm <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ")))
+
+```
+
+```{r}
+plot(influencer_sm, theme = seminr_theme_dark())
+```
+
+```{r}
+# Estimate the model
+
+influencer_model <- estimate_pls(data = influencer_data,
+                                      measurement_model = influencer_mm,
+                                      structural_model = influencer_sm,
+                                      missing = mean_replacement,
+                                      missing_value = "-99")
+```
+
+```{r}
+# Summarize the model results
+summary_influencer_model <- summary(influencer_model)
+summary_influencer_model
+```
+
+```{r}
+# Iterations to converge
+summary_influencer_model$iterations
+```
+
+```{r}
+# Bootstrap the model
+boot_influencer <- bootstrap_model(seminr_model = influencer_model, nboot = 1000)
+```
+
+```{r}
+
+# Summary of the model
+
+sum_boot_influencer_model <- summary(boot_influencer, alpha = 0.10)
+
+sum_boot_influencer_model
+
+```
+
+
+```{r}
+# Extract the bootstrapped HTMT
+sum_boot_influencer_model$bootstrapped_HTMT
+
+```
+
+
+#-------------------------------------------------------------
+
+# * Redundancy Analysis *
+
+```{r}
+# SIC
+
+# Create measurement model
+SIC_redundancy_mm <- constructs(
+  composite("SIC_F", multi_items("sic_", 1:7), weights = mode_B),
+  composite("SIC_G", single_item("sic_global"))
+)
+
+plot(SIC_redundancy_mm)
+```
+
+```{r}
+
+# Create structural model
+
+SIC_redundancy_sm <- relationships(
+  paths(from = c("SIC_F"), to = c("SIC_G"))
+)
+
+plot(SIC_redundancy_sm)
+
+```
+
+```{r}
+# Estimate the model
+SIC_redundancy_pls_model <- estimate_pls(
+  data = influencer_data,
+  measurement_model = SIC_redundancy_mm,
+  structural_model = SIC_redundancy_sm,
+  missing = mean_replacement,
+  missing_value = "-99")
+```
+
+```{r}
+# Summarize the model
+sum_SIC_red_model <- summary(SIC_redundancy_pls_model)
+
+sum_SIC_red_model
+
+```
+
+
+```{r}
+# Check the path coefficients for convergent validity
+
+sum_SIC_red_model$paths
+```
+# SIC_F = 0.717 and it is above the threshold. That means this
+# formatively measured construct exhibits convergent validity.
+
+```{r}
+
+# Collinearity analysis
+
+summary_influencer_model$validity$vif_items
+
+```
+# If VIF >= 5 , then critical collinearity issues likely occur.
+
+# For example: pl_2, pi_5 etc.
+
+
+
+# If VIF = 3 to 5 , then collinearity issues are usually uncritical.
+
+# For example: sic_1, sic_2, pq_1, pi_4 etc.
+
+
+
+# If VIF < 3, then collinearity is not a problemtic issue.
+
+# For example: sic_4, sic_5, pl_4 etc.
+
+```{r}
+# Bootstrap the model
+
+boot_influencer_ext <- bootstrap_model(
+  seminr_model = influencer_model,
+  nboot = 1000,
+  cores = parallel::detectCores(),
+  seed = 123)
+```
+# * Summarize the results of the bootstrap *
+
+```{r}
+# alpha sets the specified level for significance, i.e. 0.05
+
+sum_boot_influencer_ext <- summary(boot_influencer_ext, alpha = 0.05)
+
+```
+
+```{r}
+# Inspect the bootstrapping results for indicator weights
+
+sum_boot_influencer_ext$bootstrapped_weights
+
+```
+
+# All are significant , except: sic_1, sic_3 to sic_7 and pic_1
+
+
+# -------------------------------------------------------------
+
+# *STRUCTURAL MODELING *
+
+```{r}
+
+# Create measurement model
+
+influencer_mm_ext <- constructs(
+  composite("SIC", multi_items("sic_", 1:7), weights = mode_B),
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4))
+  )
+
+```
+
+
+```{r}
+# Create structural model
+
+influencer_sm_ext <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ")))
+
+```
+
+```{r}
+# Estimate the model
+influencer_pls_ext <- estimate_pls(data = influencer_data,
+                                      measurement_model = influencer_mm_ext,
+                                      structural_model = influencer_sm_ext,
+                                      missing = mean_replacement,
+                                      missing_value = "-99")
+```
+
+```{r}
+# Summarize the results of the model estimation
+
+summary_influencer_ext <- summary(influencer_pls_ext)
+
+```
+
+
+```{r}
+# Bootstrap the model
+
+boot_influencer_ext_1 <- bootstrap_model(
+  seminr_model = influencer_pls_ext,
+  nboot = 1000,
+  cores = parallel::detectCores(),
+  seed = 123)
+```
+
+```{r}
+# Summarize the results of the bootstrap
+summary_boot_influencer_ext <- summary(boot_influencer_ext_1,
+                                     alpha = 0.05)
+```
+
+```{r}
+# Inspect the structural model collinearity VIF
+
+summary_influencer_ext$vif_antecedents
+
+```
+# All VIF < 3, that means collinearity is not a problemtic issue.
+
+
+```{r}
+# Inspect the structural paths
+
+summary_boot_influencer_ext$bootstrapped_paths
+```
+# All are significant. Except: SIC to PI, PQ to PI,PIC to PI.
+
+
+```{r}
+# Inspect the total effects
+
+summary_boot_influencer_ext$bootstrapped_total_paths
+
+```
+
+
+
+```{r}
+# Inspect the model RSquares
+
+summary_influencer_ext$paths
+
+```
+# Here, R2 value of PI is moderate. Except that all are weak.
+
+```{r}
+# Inspect the effect sizes
+
+summary_influencer_ext$fSquare
+
+```
+# Here is the f2 value. We can get the size effect with this.
+
+```{r}
+# Generate the model predictions
+predict_influencer_ext <- predict_pls(
+  model = influencer_pls_ext,
+  technique = predict_DA,
+  noFolds = 10,
+  reps = 10)
+```
+
+```{r}
+# Summarize the prediction results
+sum_predict_influencer_ext <- summary(predict_influencer_ext)
+
+sum_predict_influencer_ext
+```
+
+```{r}
+# Analyze the distribution of prediction error
+
+par(mfrow=c(1,5))
+plot(sum_predict_influencer_ext,
+     indicator = "pi_1")
+plot(sum_predict_influencer_ext,
+     indicator = "pi_2")
+plot(sum_predict_influencer_ext,
+     indicator = "pi_3")
+plot(sum_predict_influencer_ext,
+     indicator = "pi_4")
+plot(sum_predict_influencer_ext,
+     indicator = "pi_5")
+
+
+par(mfrow=c(1,1))
+```
+# The result of the plots showed that, from left, 1,2 and 4 no. graphs
+
+# have a right trail and they are skewed to the left.
+
+# And the rest are symmetric.
+
+```{r}
+# Compute the prediction statistics
+
+sum_predict_influencer_ext
+
+```
+# For example, pi_3 of PLS out of sample (1.413) < pi_3 LM out of sample (1.442)
+
+# That means pi_3 LM out of sample has more predictive power.
+
+
+# * Estimate alternative models *
+
+```{r}
+
+# Create measurement model
+
+measurement_model <- constructs(
+  composite("SIC", multi_items("sic_", 1:7), weights = mode_B),
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4))
+  )
+
+```
+
+# * Model comparisions *
+
+```{r}
+
+# Create structural models
+
+# Model 1
+
+sm_1 <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ")))
+
+plot(sm_1)
+```
+
+```{r}
+
+# Model 2
+
+sm_2 <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ","PIC")))
+
+plot(sm_2)
+```
+
+```{r}
+# Model 3
+
+sm_3 <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ","PIC","WTP")))
+
+plot(sm_3)
+```
+
+# * Estimate and summarize the models *
+
+```{r}
+
+#Model 1
+
+pls_model1 <- estimate_pls(
+  data = influencer_data,
+  measurement_model = measurement_model,
+  structural_model = sm_1,
+  missing_value = "-99"
+)
+```
+
+```{r}
+sum_model1 <- summary(pls_model1)
+
+```
+
+```{r}
+
+#Model 2
+
+pls_model2 <- estimate_pls(
+  data = influencer_data,
+  measurement_model = measurement_model,
+  structural_model = sm_2,
+  missing_value = "-99"
+)
+```
+
+```{r}
+sum_model2 <- summary(pls_model2)
+```
+
+```{r}
+
+#Model 3
+
+pls_model3 <- estimate_pls(
+  data = influencer_data,
+  measurement_model = measurement_model,
+  structural_model = sm_3,
+  missing_value = "-99"
+)
+```
+
+```{r}
+sum_model3 <- summary(pls_model3)
+```
+
+```{r}
+# Inspect the IT Criteria matrix of Model1
+
+sum_model1$it_criteria
+
+```
+
+```{r}
+# Subset the matrix to only return the BIC row and PQ column
+
+sum_model1$it_criteria["BIC", "PQ"]
+
+```
+
+```{r}
+# Collect the vector of BIC values for PQ
+
+itcriteria_vector <- c(sum_model1$it_criteria["BIC","PQ"],
+                       sum_model2$it_criteria["BIC","PQ"],
+                       sum_model3$it_criteria["BIC","PQ"])
+```
+
+```{r}
+# Assign the model names to IT Criteria vector
+
+names(itcriteria_vector) <- c("Model1", "Model2", "Model3")
+
+```
+
+```{r}
+# Inspect the IT Criteria vector for competing models
+itcriteria_vector
+```
+# Here I can compare the IT criteria for the 3 models.
+
+
+```{r}
+
+# Calculate the model BIC Akaike weights
+
+compute_itcriteria_weights(itcriteria_vector)
+
+```
+
+# Here I can compare the 3 models with BIC Akaike weights.
+
+#--------------------------------------------------------------
+
+# * MEDIATION *
+
+```{r}
+
+# Create measurement model
+
+mm_med <- constructs(
+  composite("SIC", multi_items("sic_", 1:7), weights = mode_B),
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4))
+  )
+
+```
+
+```{r}
+# Create structural model
+
+sm_med <- relationships(
+  paths(from = c("SIC","PL","PQ","PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "PL", to = "WTP"),
+  paths(from = "PQ", to = "PL"),
+  paths(from = "PIC", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ")))
+
+
+plot(sm_med)
+```
+
+```{r}
+# Estimate the model
+
+med_pls <- estimate_pls(data = influencer_data,
+                                      measurement_model = mm_med,
+                                      structural_model = sm_med,
+                                      missing = mean_replacement,
+                                      missing_value = "-99")
+
+```
+
+```{r}
+
+# Summarize the results of the model estimation
+
+summary_med <- summary(med_pls)
+
+```
+
+```{r}
+
+# Bootstrap the model
+
+boot_med <- bootstrap_model(
+  seminr_model = med_pls,
+  nboot = 1000,
+  cores = parallel::detectCores(),
+  seed = 123
+
+)
+
+```
+
+```{r}
+# Summarize the results of the bootstrap
+
+summary_boot_med <- summary(boot_med, alpha = 0.05)
+
+```
+
+
+```{r}
+
+# Inspect total indirect effects
+
+summary_med$total_indirect_effects
+
+```
+
+```{r}
+# Inspect indirect effects
+
+specific_effect_significance(boot_med,
+                             from = "PL",
+                             through = "PI",
+                             to = "WTP",
+                             alpha = 0.05)
+```
+# Indirect effect of PL to WTP is insignificant.
+
+```{r}
+specific_effect_significance(boot_med,
+                             from = "PIC",
+                             through = "PI",
+                             to = "WTP",
+                             alpha = 0.05)
+
+```
+# Indirect effect of PIC to WTP is insignificant.
+
+# As indirect effect is insignificant for both cases, there is surely No Mediation.
+# But to identify what type of non - mediation it is , I will anlyze the direct effect.
+
+```{r}
+# Inspect the direct effects
+
+summary_med$paths
+
+```
+
+```{r}
+# Inspect the confidence intervals for direct effects
+
+summary_boot_med$bootstrapped_paths
+
+```
+# Here direct effect of PL to WTP is significant. But, indirect effect is insignificant
+# That means it is - direct only non mediation.
+
+
+# Again, direct effect of PIC to WTP is insignificant. And also indirect effect is 
+# insignificant. That means it is : no effect - no mediation.
+
+
+# As there is no mediation there is no need to further evaluate if PI acts as a 
+# complementary or competitive mediator.
+
+
+#------------------------------------------------------------
+
+# * MODERATION *
+
+```{r}
+
+# Create the measurement model
+
+mm_mod <- constructs(
+  composite("SIC", multi_items("sic_", 1:7), weights = mode_B),
+  composite("PL", multi_items("pl_", 1:4)),
+  composite("PIC", multi_items("pic_", 1:5)),
+  composite("PI", multi_items("pi_", 1:5)),
+  composite("WTP", single_item("wtp")),
+  composite("PQ", multi_items("pq_", 1:4)),
+  interaction_term(iv = "PQ", moderator = "PIC", method = two_stage))
+```
+
+
+```{r}
+
+# Plot the measurement model
+
+plot(mm_mod)
+
+```
+
+```{r}
+# Create the structural model
+
+sm_mod <- relationships(
+  paths(from = c("PL","PQ","PIC", "PQ*PIC"), to = "PI"),
+  paths(from = "PI", to = "WTP"),
+  paths(from = "PL", to = "WTP"),
+  paths(from = "PQ", to = "PL"),
+  paths(from = "PIC", to = "WTP"),
+  paths(from = "SIC", to = c("PL","PQ", "PI")))
+
+```
+
+
+```{r}
+
+# Plot the structural model
+
+plot(sm_mod)
+
+```
+
+
+```{r}
+# Estimate the new model with moderator
+
+mod_pls <- estimate_pls(data = influencer_data,
+                                      measurement_model = mm_mod,
+                                      structural_model = sm_mod,
+                                      missing = mean_replacement,
+                                      missing_value = "-99")
+```
+
+```{r}
+# Extract the summary
+
+summery_mod <- summary(mod_pls)
+
+```
+
+```{r}
+# Bootstrap the model
+boot_mod <- bootstrap_model(
+  seminr_model = mod_pls,
+  nboot = 1000)
+```
+
+```{r}
+# Summarize the results of the bootstrap
+
+sum_boot_mod <- summary(boot_mod, alpha = 0.05)
+
+```
+
+```{r}
+# Inspect the bootstrapped structural paths
+
+sum_boot_mod$bootstrapped_paths
+
+```
+# Here all of them are insignificant except - PL to PI , PL to WTP , PQ to PL ,
+
+# SIC to PL and SIC to PQ
+
+```{r}
+
+# Simple slope analysis plot
+
+slope_analysis(
+  moderated_model = mod_pls,
+  dv = "PI",
+  moderator = "PIC",
+  iv = "PQ",
+  leg_place = "bottomright"
+  )
+
+```
+
+
+# Here, the 3 lines showing the relationship between PQ and PI. The middle line represents
+
+# the average level.
