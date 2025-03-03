@@ -6,4 +6,4 @@ Although applied to influencer data here, the methodology is highly versatile. S
 
 The code is organized and thoroughly documented, offering a reproducible template that demonstrates how advanced statistical modeling can be applied to real-world data challenges. It serves as a blueprint for addressing a wide range of problems where uncovering hidden relationships can drive impactful insights and improvements.
 
-Both RMD and HTML was uploaded for better understanding.
+Both R code file (RMD) and HTML (with output) was uploaded for better understanding.
